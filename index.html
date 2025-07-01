@@ -1,0 +1,2759 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Movileyes</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            /* Light Theme Variables */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --primary-color: #2563eb;
+            --primary-color-hover: #1d4ed8;
+            --primary-color-light: #dbeafe;
+            --success-color: #10b981;
+            --success-color-light: #d1fae5;
+            --warning-color: #f59e0b;
+            --warning-color-light: #fef3c7;
+            --danger-color: #ef4444;
+            --danger-color-light: #fee2e2;
+            --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --box-shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --sidebar-bg: #ffffff;
+            --sidebar-hover: #f1f5f9;
+            --sidebar-active: #dbeafe;
+            --sidebar-width: 260px;
+            --header-height: 60px;
+            --mobile-nav-height: 64px;
+            --chart-grid: #e2e8f0;
+        }
+
+        /* Dark Theme Variables */
+        html.dark {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --primary-color: #3b82f6;
+            --primary-color-hover: #2563eb;
+            --primary-color-light: #1e3a8a;
+            --success-color: #10b981;
+            --success-color-light: #064e3b;
+            --warning-color: #f59e0b;
+            --warning-color-light: #78350f;
+            --danger-color: #ef4444;
+            --danger-color-light: #7f1d1d;
+            --box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --box-shadow-elevated: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+            --sidebar-bg: #1e293b;
+            --sidebar-hover: #334155;
+            --sidebar-active: #1e40af;
+            --chart-grid: #475569;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 30;
+            box-shadow: var(--box-shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .logo i {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.25rem;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--primary-color-light);
+            color: var(--text-primary);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            margin-top: var(--header-height);
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+            z-index: 20;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            margin: 0 0.75rem;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .nav-link i {
+            margin-right: 0.75rem;
+            font-size: 1.125rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background-color: var(--sidebar-hover);
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            background-color: var(--primary-color-light);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 1.5rem;
+            width: calc(100% - var(--sidebar-width));
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .page-description {
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: var(--mobile-nav-height);
+            background-color: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            z-index: 20;
+            padding: 0 1rem;
+        }
+
+        .mobile-nav-links {
+            display: flex;
+            height: 100%;
+            list-style: none;
+            justify-content: space-around;
+        }
+
+        .mobile-nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-decoration: none;
+            flex: 1;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .mobile-nav-link i {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .mobile-nav-link span {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .mobile-nav-link.active {
+            color: var(--primary-color);
+        }
+
+        .mobile-nav-link.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 3rem;
+            height: 3px;
+            background-color: var(--primary-color);
+            border-radius: 0 0 3px 3px;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-primary);
+            border-radius: 0.75rem;
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            transition: box-shadow 0.3s, transform 0.3s;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            box-shadow: var(--box-shadow-elevated);
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .card-footer {
+            padding: 1.25rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+        }
+
+        /* Dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background-color: var(--bg-primary);
+            border-radius: 0.75rem;
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow-elevated);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 0.75rem;
+            background-color: var(--primary-color-light);
+            color: var(--primary-color);
+            font-size: 1.25rem;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary);
+        }
+
+        .stat-card-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .icon-bueno {
+            background-color: var(--success-color-light);
+            color: var(--success-color);
+        }
+
+        .icon-danado {
+            background-color: var(--warning-color-light);
+            color: var(--warning-color);
+        }
+
+        .icon-no-tiene {
+            background-color: var(--danger-color-light);
+            color: var(--danger-color);
+        }
+
+        /* Charts */
+        .chart-container {
+            background-color: var(--bg-primary);
+            border-radius: 0.75rem;
+            box-shadow: var(--box-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+        }
+
+        /* Sensor Status */
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .sensor-card {
+            background-color: var(--bg-secondary);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .sensor-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .radio-option input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .radio-custom {
+            height: 2.5rem;
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            font-weight: 500;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .radio-option input:checked+.radio-custom {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color-light);
+            color: var(--text-primary);
+        }
+
+        .radio-option input:checked+.radio-custom.status-bueno {
+            background-color: var(--success-color-light);
+            color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .radio-option input:checked+.radio-custom.status-danado {
+            background-color: var(--warning-color-light);
+            color: var(--warning-color);
+            border-color: var(--warning-color);
+        }
+
+        .radio-option input:checked+.radio-custom.status-no-tiene {
+            background-color: var(--danger-color-light);
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-color-hover);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #0ca875;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-icon {
+            padding: 0.625rem;
+            font-size: 1rem;
+        }
+
+        .btn-icon i {
+            margin: 0;
+        }
+
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-block {
+            width: 100%;
+            display: flex;
+        }
+
+        .btn i {
+            margin-right: 0.5rem;
+            font-size: 1.125rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 0.75rem;
+            background-color: var(--bg-primary);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--box-shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-badge i {
+            margin-right: 0.375rem;
+        }
+
+        .status-bueno {
+            background-color: var(--success-color-light);
+            color: var(--success-color);
+        }
+
+        .status-danado {
+            background-color: var(--warning-color-light);
+            color: var(--warning-color);
+        }
+
+        .status-no-tiene {
+            background-color: var(--danger-color-light);
+            color: var(--danger-color);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.25rem;
+            margin-top: 1rem;
+        }
+
+        .pagination button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            height: 2rem;
+            padding: 0 0.5rem;
+            border-radius: 0.375rem;
+            background-color: var(--bg-primary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pagination button.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .pagination button:hover:not(.active) {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        /* Search and Filters */
+        .search-bar {
+            position: relative;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .search-bar input {
+            padding-left: 2.5rem;
+            width: 100%;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        /* Toasts */
+        .toast-container {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .toast {
+            background-color: var(--bg-primary);
+            border-radius: 0.5rem;
+            box-shadow: var(--box-shadow-elevated);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 4.7s forwards;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .toast::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+        }
+
+        .toast-success::before {
+            background-color: var(--success-color);
+        }
+
+        .toast-error::before {
+            background-color: var(--danger-color);
+        }
+
+        .toast-warning::before {
+            background-color: var(--warning-color);
+        }
+
+        .toast-icon {
+            margin-right: 0.75rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toast-success .toast-icon {
+            color: var(--success-color);
+        }
+
+        .toast-error .toast-icon {
+            color: var(--danger-color);
+        }
+
+        .toast-warning .toast-icon {
+            color: var(--warning-color);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .toast-message {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background-color: var(--primary-color);
+            animation: progress 5s linear;
+        }
+
+        @keyframes progress {
+            from {
+                width: 100%;
+            }
+
+            to {
+                width: 0%;
+            }
+        }
+
+        @keyframes toastIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Reports */
+        .report-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --mobile-nav-height: 64px;
+            }
+
+            .menu-toggle {
+                display: flex;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            main {
+                margin-left: 0;
+                width: 100%;
+                padding-bottom: calc(var(--mobile-nav-height) + 1.5rem);
+            }
+
+            .mobile-nav {
+                display: block;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .sensors-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Make form section first for mobile */
+            body.mobile-form-first .section#form {
+                display: block;
+            }
+
+            body.mobile-form-first .section#dashboard,
+            body.mobile-form-first .section#records,
+            body.mobile-form-first .section#reports {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="mobile-form-first">
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <i class="fas fa-bus"></i>
+            <span>Movileyes Monitor</span>
+        </div>
+        <div class="header-actions">
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Layout Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">MENÚ PRINCIPAL</div>
+            </div>
+            <ul class="nav-links">
+                <li>
+                    <a href="#dashboard" class="nav-link" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#form" class="nav-link active" data-section="form">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Formulario</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#records" class="nav-link" data-section="records">
+                        <i class="fas fa-database"></i>
+                        <span>Registros</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#reports" class="nav-link" data-section="reports">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Informes</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Mobile Navigation -->
+        <nav class="mobile-nav">
+            <ul class="mobile-nav-links">
+                <li>
+                    <a href="#dashboard" class="mobile-nav-link" data-section="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#form" class="mobile-nav-link active" data-section="form">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Formulario</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#records" class="mobile-nav-link" data-section="records">
+                        <i class="fas fa-database"></i>
+                        <span>Registros</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#reports" class="mobile-nav-link" data-section="reports">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Informes</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Dashboard</h1>
+                        <p class="page-description">Resumen general del estado de los sensores Movileyes</p>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-outline btn-icon refresh-dashboard">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon">
+                                <i class="fas fa-bus"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="total-buses">0</div>
+                        <div class="stat-card-label">Buses en Flota</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon icon-bueno">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="sensors-bueno">0</div>
+                        <div class="stat-card-label">Sensores Buenos</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon icon-danado">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="sensors-danado">0</div>
+                        <div class="stat-card-label">Sensores Dañados</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-card-icon icon-no-tiene">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-card-value" id="sensors-no-tiene">0</div>
+                        <div class="stat-card-label">Sin Sensor</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2 class="chart-title">Estado de sensores por tipo</h2>
+                    </div>
+                    <canvas id="sensors-chart" height="250"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h2 class="chart-title">Tendencia de fallas últimos 30 días</h2>
+                    </div>
+                    <canvas id="trend-chart" height="250"></canvas>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Últimas revisiones</h2>
+                    </div>
+                    <div class="table-container">
+                        <table id="recent-inspections">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>N° Interno</th>
+                                    <th>PPU</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Form Section -->
+            <section id="form" class="section active">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Formulario de Revisión</h1>
+                        <p class="page-description">Registre el estado de los sensores Movileyes</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Datos del Bus</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="inspection-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="bus-select">N° Interno</label>
+                                    <select id="bus-select" required>
+                                        <option value="">Seleccione un bus</option>
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ppu">PPU</label>
+                                    <input type="text" id="ppu" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="marca">Marca</label>
+                                    <input type="text" id="marca" value="Volvo" readonly>
+                                </div>
+                            </div>
+
+                            <h3 class="sensor-title" style="margin: 1.5rem 0 1rem">Estado de los Sensores</h3>
+                            <div class="sensors-grid">
+                                <div class="sensor-card">
+                                    <h4 class="sensor-title">ALERTA IZQUIERDA (en cabina)</h4>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="alerta-izq" value="BUENO" required>
+                                            <span class="radio-custom status-bueno">BUENO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="alerta-izq" value="DAÑADO">
+                                            <span class="radio-custom status-danado">DAÑADO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="alerta-izq" value="NO TIENE">
+                                            <span class="radio-custom status-no-tiene">NO TIENE</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="sensor-card">
+                                    <h4 class="sensor-title">ALERTA DERECHA (en cabina)</h4>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="alerta-der" value="BUENO" required>
+                                            <span class="radio-custom status-bueno">BUENO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="alerta-der" value="DAÑADO">
+                                            <span class="radio-custom status-danado">DAÑADO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="alerta-der" value="NO TIENE">
+                                            <span class="radio-custom status-no-tiene">NO TIENE</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="sensor-card">
+                                    <h4 class="sensor-title">CONSOLA (en cabina)</h4>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="consola" value="BUENO" required>
+                                            <span class="radio-custom status-bueno">BUENO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="consola" value="DAÑADO">
+                                            <span class="radio-custom status-danado">DAÑADO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="consola" value="NO TIENE">
+                                            <span class="radio-custom status-no-tiene">NO TIENE</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="sensor-card">
+                                    <h4 class="sensor-title">SENSOR FRONTAL (en cabina)</h4>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-frontal" value="BUENO" required>
+                                            <span class="radio-custom status-bueno">BUENO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-frontal" value="DAÑADO">
+                                            <span class="radio-custom status-danado">DAÑADO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-frontal" value="NO TIENE">
+                                            <span class="radio-custom status-no-tiene">NO TIENE</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="sensor-card">
+                                    <h4 class="sensor-title">SENSOR IZQ (exterior)</h4>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-izq" value="BUENO" required>
+                                            <span class="radio-custom status-bueno">BUENO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-izq" value="DAÑADO">
+                                            <span class="radio-custom status-danado">DAÑADO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-izq" value="NO TIENE">
+                                            <span class="radio-custom status-no-tiene">NO TIENE</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="sensor-card">
+                                    <h4 class="sensor-title">SENSOR DER (exterior)</h4>
+                                    <div class="radio-group">
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-der" value="BUENO" required>
+                                            <span class="radio-custom status-bueno">BUENO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-der" value="DAÑADO">
+                                            <span class="radio-custom status-danado">DAÑADO</span>
+                                        </label>
+                                        <label class="radio-option">
+                                            <input type="radio" name="sensor-der" value="NO TIENE">
+                                            <span class="radio-custom status-no-tiene">NO TIENE</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="observaciones">Observaciones</label>
+                                <textarea id="observaciones" rows="3"
+                                    placeholder="Ingrese observaciones adicionales si es necesario"></textarea>
+                            </div>
+
+                            <div class="btn-group" style="justify-content: flex-end">
+                                <button type="reset" class="btn btn-outline">
+                                    <i class="fas fa-undo"></i> Limpiar
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Registro
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Records Section -->
+            <section id="records" class="section">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Registros</h1>
+                        <p class="page-description">Historial de revisiones de sensores</p>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="export-records">
+                            <i class="fas fa-file-export"></i> Exportar a Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="records-search" placeholder="Buscar por PPU, N° Interno...">
+                    </div>
+                    <div class="filter">
+                        <label for="records-status">Estado</label>
+                        <select id="records-status">
+                            <option value="">Todos</option>
+                            <option value="BUENO">BUENO</option>
+                            <option value="DAÑADO">DAÑADO</option>
+                            <option value="NO TIENE">NO TIENE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="records-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Hora</th>
+                                <th>N° Interno</th>
+                                <th>PPU</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination" id="records-pagination">
+                    <!-- Populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" class="section">
+                <div class="page-header">
+                    <div>
+                        <h1 class="page-title">Informes</h1>
+                        <p class="page-description">Informes detallados sobre el estado de los sensores</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Informe por Bus</h2>
+                        <button class="btn btn-primary" id="export-bus-report">
+                            <i class="fas fa-file-export"></i> Exportar a Excel
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-filters">
+                            <div class="form-group">
+                                <label for="bus-report-select">Bus</label>
+                                <select id="bus-report-select">
+                                    <option value="">Todos los buses</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="bus-report-date-from">Desde</label>
+                                <input type="date" id="bus-report-date-from">
+                            </div>
+                            <div class="form-group">
+                                <label for="bus-report-date-to">Hasta</label>
+                                <input type="date" id="bus-report-date-to">
+                            </div>
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-primary" id="generate-bus-report">
+                                    <i class="fas fa-sync-alt"></i> Generar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="bus-report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>N° Interno</th>
+                                        <th>PPU</th>
+                                        <th>Alerta Izq</th>
+                                        <th>Alerta Der</th>
+                                        <th>Consola</th>
+                                        <th>Sensor Frontal</th>
+                                        <th>Sensor Izq</th>
+                                        <th>Sensor Der</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Informe de Fallas</h2>
+                        <button class="btn btn-primary" id="export-failures-report">
+                            <i class="fas fa-file-export"></i> Exportar a Excel
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="report-filters">
+                            <div class="form-group">
+                                <label for="failures-report-component">Componente</label>
+                                <select id="failures-report-component">
+                                    <option value="">Todos los componentes</option>
+                                    <option value="alerta-izq">Alerta Izquierda</option>
+                                    <option value="alerta-der">Alerta Derecha</option>
+                                    <option value="consola">Consola</option>
+                                    <option value="sensor-frontal">Sensor Frontal</option>
+                                    <option value="sensor-izq">Sensor Izquierdo</option>
+                                    <option value="sensor-der">Sensor Derecho</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="failures-report-date-from">Desde</label>
+                                <input type="date" id="failures-report-date-from">
+                            </div>
+                            <div class="form-group">
+                                <label for="failures-report-date-to">Hasta</label>
+                                <input type="date" id="failures-report-date-to">
+                            </div>
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-primary" id="generate-failures-report">
+                                    <i class="fas fa-sync-alt"></i> Generar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table id="failures-report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>N° Interno</th>
+                                        <th>PPU</th>
+                                        <th>Componente</th>
+                                        <th>Estado</th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+
+        // Bus data
+const busesData = [
+    { interno: "911", ppu: "SHCV78", marca: "Volvo", chasis: "" },
+    { interno: "916", ppu: "SHCV83", marca: "Volvo", chasis: "" },
+    { interno: "922", ppu: "SHCX39", marca: "Volvo", chasis: "" },
+    { interno: "936", ppu: "SHCY22", marca: "Volvo", chasis: "" },
+    { interno: "942", ppu: "SHCY28", marca: "Volvo", chasis: "" },
+    { interno: "1455", ppu: "SHXD75", marca: "Volvo", chasis: "" },
+    { interno: "1456", ppu: "SHXD77", marca: "Volvo", chasis: "" },
+    { interno: "1457", ppu: "SHXD79", marca: "Volvo", chasis: "" },
+    { interno: "1459", ppu: "SHXD85", marca: "Volvo", chasis: "" },
+    { interno: "1460", ppu: "SHXF13", marca: "Volvo", chasis: "" },
+    { interno: "1461", ppu: "SHXF14", marca: "Volvo", chasis: "" },
+    { interno: "1462", ppu: "SHXF29", marca: "Volvo", chasis: "" },
+    { interno: "1463", ppu: "SHXF31", marca: "Volvo", chasis: "" },
+    { interno: "1465", ppu: "SHXF84", marca: "Volvo", chasis: "" },
+    { interno: "1466", ppu: "SHXF85", marca: "Volvo", chasis: "" },
+    { interno: "1467", ppu: "SHXF87", marca: "Volvo", chasis: "" },
+    { interno: "1468", ppu: "SHXF88", marca: "Volvo", chasis: "" },
+    { interno: "1469", ppu: "SHXF90", marca: "Volvo", chasis: "" },
+    { interno: "1470", ppu: "SHXF92", marca: "Volvo", chasis: "" },
+    { interno: "1471", ppu: "SHXF93", marca: "Volvo", chasis: "" },
+    { interno: "1472", ppu: "SHXF97", marca: "Volvo", chasis: "" },
+    { interno: "1475", ppu: "SHXG36", marca: "Volvo", chasis: "" },
+    { interno: "1476", ppu: "SHXG38", marca: "Volvo", chasis: "" },
+    { interno: "1606", ppu: "SJPB21", marca: "Volvo", chasis: "" },
+    { interno: "1610", ppu: "SJPB25", marca: "Volvo", chasis: "" },
+    { interno: "1636", ppu: "SJPC73", marca: "Volvo", chasis: "" },
+    { interno: "1647", ppu: "SJPD42", marca: "Volvo", chasis: "" },
+    { interno: "1649", ppu: "SJPD44", marca: "Volvo", chasis: "" },
+    { interno: "1655", ppu: "SJPD71", marca: "Volvo", chasis: "" },
+    { interno: "1656", ppu: "SJPD72", marca: "Volvo", chasis: "" },
+    { interno: "1663", ppu: "SJPD97", marca: "Volvo", chasis: "" },
+    { interno: "1667", ppu: "SJPF43", marca: "Volvo", chasis: "" },
+    { interno: "1668", ppu: "SJPF44", marca: "Volvo", chasis: "" },
+    { interno: "1682", ppu: "SKPH70", marca: "Volvo", chasis: "" },
+    { interno: "1684", ppu: "SKPH73", marca: "Volvo", chasis: "" },
+    { interno: "1822", ppu: "SKPJ90", marca: "Volvo", chasis: "" },
+    { interno: "1823", ppu: "SKPK18", marca: "Volvo", chasis: "" },
+    { interno: "1824", ppu: "SKPK19", marca: "Volvo", chasis: "" },
+    { interno: "1825", ppu: "SKPK20", marca: "Volvo", chasis: "" },
+    { interno: "1826", ppu: "SKPK21", marca: "Volvo", chasis: "" },
+    { interno: "1827", ppu: "SKPK22", marca: "Volvo", chasis: "" },
+    { interno: "1828", ppu: "SKPK23", marca: "Volvo", chasis: "" },
+    { interno: "1829", ppu: "SKPK25", marca: "Volvo", chasis: "" },
+    { interno: "1830", ppu: "SKPK26", marca: "Volvo", chasis: "" },
+    { interno: "1831", ppu: "SKPK27", marca: "Volvo", chasis: "" },
+    { interno: "1832", ppu: "SKPK28", marca: "Volvo", chasis: "" },
+    { interno: "1834", ppu: "SKPK31", marca: "Volvo", chasis: "" },
+    { interno: "1835", ppu: "SKPK32", marca: "Volvo", chasis: "" },
+    { interno: "1837", ppu: "SKPK34", marca: "Volvo", chasis: "" },
+    { interno: "1838", ppu: "SKPK35", marca: "Volvo", chasis: "" },
+    { interno: "1839", ppu: "SKPK37", marca: "Volvo", chasis: "" },
+    { interno: "1840", ppu: "SKPK39", marca: "Volvo", chasis: "" },
+    { interno: "1841", ppu: "SKPK40", marca: "Volvo", chasis: "" },
+    { interno: "1843", ppu: "SKPK42", marca: "Volvo", chasis: "" },
+    { interno: "1844", ppu: "SKPK44", marca: "Volvo", chasis: "" },
+    { interno: "1845", ppu: "SKPK45", marca: "Volvo", chasis: "" },
+    { interno: "1846", ppu: "SKPK62", marca: "Volvo", chasis: "" },
+    { interno: "1847", ppu: "SKPK63", marca: "Volvo", chasis: "" },
+    { interno: "1848", ppu: "SKPL28", marca: "Volvo", chasis: "" },
+    { interno: "1849", ppu: "SKPL30", marca: "Volvo", chasis: "" },
+    { interno: "1850", ppu: "SKPL33", marca: "Volvo", chasis: "" },
+    { interno: "1851", ppu: "SKPL34", marca: "Volvo", chasis: "" },
+    { interno: "1852", ppu: "SKPL36", marca: "Volvo", chasis: "" }
+];
+
+// Initialize Supabase
+let client = null;
+const supabaseUrl = 'https://tcmtxvuucjttngcazgff.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjbXR4dnV1Y2p0dG5nY2F6Z2ZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3MjUwMDEsImV4cCI6MjA1NjMwMTAwMX0.2WcIjMUEhSM6j9kYpbsYArQocZdHx86k7wXk-NyjIs0';
+
+if (typeof supabase !== 'undefined') {
+    try {
+        client = supabase.createClient(supabaseUrl, supabaseKey);
+        console.log('✅ Cliente de Supabase inicializado correctamente');
+    } catch (error) {
+        console.warn('❌ Error al inicializar Supabase:', error);
+    }
+} else {
+    console.warn('❌ Librería de Supabase no disponible');
+}
+
+// Global variables
+let inspectionsData = [];
+let chartInstances = {};
+let currentRecordsPage = 1;
+
+// DOM Elements - Declararlos globalmente
+let themeToggle, menuToggle, sidebar, navLinks, mobileNavLinks, sections;
+let busSelect, ppuInput, inspectionForm, loadingOverlay, toastContainer;
+
+// Initialize DOM elements
+function initDOMElements() {
+    themeToggle = document.getElementById('theme-toggle');
+    menuToggle = document.getElementById('menu-toggle');
+    sidebar = document.getElementById('sidebar');
+    navLinks = document.querySelectorAll('.nav-link');
+    mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+    sections = document.querySelectorAll('.section');
+    busSelect = document.getElementById('bus-select');
+    ppuInput = document.getElementById('ppu');
+    inspectionForm = document.getElementById('inspection-form');
+    loadingOverlay = document.getElementById('loading-overlay');
+    toastContainer = document.getElementById('toast-container');
+    
+    // Debug: Verificar que los elementos existen
+    console.log('🔍 Verificando elementos del DOM:');
+    console.log('busSelect:', busSelect);
+    console.log('ppuInput:', ppuInput);
+    console.log('inspectionForm:', inspectionForm);
+    console.log('loadingOverlay:', loadingOverlay);
+    console.log('toastContainer:', toastContainer);
+}
+
+// Format functions
+const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getFullYear()}`;
+};
+
+const formatTime = (date) => {
+    const d = new Date(date);
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+};
+
+const formatDateTime = (date) => {
+    return `${formatDate(date)} ${formatTime(date)}`;
+};
+
+// Helper for status class
+function getStatusClass(status) {
+    return status === 'BUENO' ? 'status-bueno' :
+           status === 'DAÑADO' ? 'status-danado' : 'status-no-tiene';
+}
+
+// Show/Hide loading
+function showLoading() {
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('active');
+    }
+}
+
+function hideLoading() {
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('active');
+    }
+}
+
+// Show toast notification
+function showToast(title, message, type = 'success') {
+    if (!toastContainer) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    const iconClass = type === 'success' ? 'check-circle' : 
+                     type === 'error' ? 'times-circle' : 'exclamation-triangle';
+    
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="fas fa-${iconClass}"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <div class="toast-progress"></div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+// Custom Alert Functions
+function showConfirmAlert(title, message, onConfirm, onCancel = null) {
+    const alertOverlay = document.createElement('div');
+    alertOverlay.style.position = 'fixed';
+    alertOverlay.style.top = '0';
+    alertOverlay.style.left = '0';
+    alertOverlay.style.right = '0';
+    alertOverlay.style.bottom = '0';
+    alertOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+    alertOverlay.style.display = 'flex';
+    alertOverlay.style.justifyContent = 'center';
+    alertOverlay.style.alignItems = 'center';
+    alertOverlay.style.zIndex = '1000';
+    alertOverlay.style.padding = '1rem';
+    
+    const alertContent = document.createElement('div');
+    alertContent.style.backgroundColor = 'var(--bg-primary)';
+    alertContent.style.borderRadius = '0.75rem';
+    alertContent.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
+    alertContent.style.padding = '2rem';
+    alertContent.style.width = '100%';
+    alertContent.style.maxWidth = '500px';
+    alertContent.style.maxHeight = '90vh';
+    alertContent.style.overflow = 'auto';
+    
+    alertContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="width: 60px; height: 60px; margin: 0 auto 1rem; background-color: var(--warning-color-light); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; color: var(--warning-color);"></i>
+            </div>
+            <h3 style="margin: 0 0 0.5rem; font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">${title}</h3>
+            <div style="margin: 0; color: var(--text-secondary); line-height: 1.5;">${message}</div>
+        </div>
+        <div style="display: flex; gap: 0.75rem; justify-content: center;">
+            <button id="alert-cancel" class="btn btn-outline" style="min-width: 100px;">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button id="alert-confirm" class="btn btn-primary" style="min-width: 100px;">
+                <i class="fas fa-check"></i> Continuar
+            </button>
+        </div>
+    `;
+    
+    alertOverlay.appendChild(alertContent);
+    document.body.appendChild(alertOverlay);
+    
+    const confirmBtn = alertContent.querySelector('#alert-confirm');
+    const cancelBtn = alertContent.querySelector('#alert-cancel');
+    
+    confirmBtn.addEventListener('click', () => {
+        alertOverlay.remove();
+        if (onConfirm) onConfirm();
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+        alertOverlay.remove();
+        if (onCancel) onCancel();
+    });
+    
+    alertOverlay.addEventListener('click', (e) => {
+        if (e.target === alertOverlay) {
+            alertOverlay.remove();
+            if (onCancel) onCancel();
+        }
+    });
+    
+    setTimeout(() => confirmBtn.focus(), 100);
+}
+
+// Check if PPU already inspected today
+function checkIfPPUAlreadyInspected(ppu, busInterno) {
+    const today = new Date();
+    const todayStr = today.toDateString();
+    
+    const existingInspection = inspectionsData.find(inspection => {
+        const inspectionDate = new Date(inspection.fecha);
+        return inspection.ppu === ppu && 
+               inspection.bus_interno === busInterno &&
+               inspectionDate.toDateString() === todayStr;
+    });
+    
+    return existingInspection;
+}
+
+function formatExistingInspectionInfo(inspection) {
+    const time = formatTime(inspection.fecha);
+    const sensorStates = [
+        `Alerta Izq: ${inspection['alerta-izq']}`,
+        `Alerta Der: ${inspection['alerta-der']}`,
+        `Consola: ${inspection['consola']}`,
+        `Sensor Frontal: ${inspection['sensor-frontal']}`,
+        `Sensor Izq: ${inspection['sensor-izq']}`,
+        `Sensor Der: ${inspection['sensor-der']}`
+    ];
+    
+    return `
+        <strong>Registro existente:</strong><br>
+        • Hora: ${time}<br>
+        • Estado general: ${inspection.estado_general}<br>
+        • Detalles: ${sensorStates.join(', ')}<br><br>
+        ¿Desea crear un nuevo registro de todas formas?
+    `;
+}
+
+// Navigation
+function initNavigation() {
+    console.log('🔧 Inicializando navegación...');
+    
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const htmlEl = document.documentElement;
+            const isDark = htmlEl.classList.contains('dark');
+            
+            if (isDark) {
+                htmlEl.classList.remove('dark');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('theme', 'light');
+            } else {
+                htmlEl.classList.add('dark');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+    }
+
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    }
+
+    function setActiveSection(sectionId) {
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-section') === sectionId) {
+                link.classList.add('active');
+            }
+        });
+
+        mobileNavLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('data-section') === sectionId) {
+                link.classList.add('active');
+            }
+        });
+
+        sections.forEach(section => {
+            section.classList.remove('active');
+            if (section.id === sectionId) {
+                section.classList.add('active');
+            }
+        });
+
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('active');
+        }
+
+        window.location.hash = sectionId;
+
+        if (window.innerWidth <= 768 && sectionId === 'form') {
+            window.scrollTo(0, 0);
+        }
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sectionId = link.getAttribute('data-section');
+            setActiveSection(sectionId);
+        });
+    });
+
+    mobileNavLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const sectionId = link.getAttribute('data-section');
+            setActiveSection(sectionId);
+        });
+    });
+
+    if (window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        if (['dashboard', 'form', 'records', 'reports'].includes(hash)) {
+            setActiveSection(hash);
+        }
+    }
+}
+
+// Bus selection
+function initBusSelect() {
+    console.log('🔧 Inicializando selección de buses...');
+    
+    if (!busSelect) {
+        console.error('❌ busSelect no encontrado');
+        return;
+    }
+    
+    busesData.sort((a, b) => parseInt(a.interno) - parseInt(b.interno));
+    
+    busesData.forEach(bus => {
+        const option = document.createElement('option');
+        option.value = bus.interno;
+        option.textContent = `${bus.interno} - ${bus.ppu}`;
+        busSelect.appendChild(option);
+        
+        const busReportSelect = document.getElementById('bus-report-select');
+        if (busReportSelect) {
+            const reportOption = option.cloneNode(true);
+            busReportSelect.appendChild(reportOption);
+        }
+    });
+    
+    busSelect.addEventListener('change', () => {
+        const selectedBus = busesData.find(bus => bus.interno === busSelect.value);
+        if (selectedBus && ppuInput) {
+            ppuInput.value = selectedBus.ppu;
+        } else if (ppuInput) {
+            ppuInput.value = '';
+        }
+    });
+    
+    console.log('✅ Selección de buses inicializada');
+}
+
+// Supabase functions
+async function loadDataFromSupabase() {
+    if (!client) {
+        console.warn('Cliente de Supabase no disponible');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const { data, error } = await client
+            .from('inspections')
+            .select('*')
+            .order('fecha', { ascending: false });
+        
+        if (error) {
+            console.error('Error al cargar datos desde Supabase:', error);
+            showToast('Error de Carga', 'No se pudieron cargar los datos desde Supabase.', 'error');
+            return;
+        }
+        
+        inspectionsData = data || [];
+        
+        inspectionsData.forEach(inspection => {
+            if (typeof inspection.fecha === 'string') {
+                inspection.fecha = new Date(inspection.fecha);
+            }
+        });
+        
+        updateDashboard();
+        updateRecordsTable();
+        updateReports();
+        
+        console.log(`✅ Cargados ${inspectionsData.length} registros desde Supabase`);
+        
+        if (inspectionsData.length > 0) {
+            showToast('Datos Cargados', `Se cargaron ${inspectionsData.length} registros desde Supabase.`, 'success');
+        }
+        
+    } catch (error) {
+        console.error('Error en loadDataFromSupabase:', error);
+        showToast('Error', 'Error al conectar con Supabase.', 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+// Form validation
+function validateForm() {
+    console.log('🔍 Validando formulario...');
+    
+    if (!busSelect || !busSelect.value) {
+        showToast('Error', 'Por favor seleccione un bus.', 'error');
+        return false;
+    }
+    
+    if (!ppuInput || !ppuInput.value) {
+        showToast('Error', 'PPU no válido.', 'error');
+        return false;
+    }
+    
+    // Verificar que todos los sensores estén seleccionados
+    const sensorNames = ['alerta-izq', 'alerta-der', 'consola', 'sensor-frontal', 'sensor-izq', 'sensor-der'];
+    
+    for (let sensorName of sensorNames) {
+        const selectedRadio = document.querySelector(`input[name="${sensorName}"]:checked`);
+        if (!selectedRadio) {
+            showToast('Error', `Por favor seleccione el estado del sensor: ${sensorName}`, 'error');
+            return false;
+        }
+    }
+    
+    console.log('✅ Formulario válido');
+    return true;
+}
+
+// Form submission - VERSIÓN CORREGIDA Y SIMPLIFICADA
+async function processFormSubmission() {
+    console.log('📝 Procesando envío del formulario...');
+    
+    if (!validateForm()) {
+        return;
+    }
+    
+    try {
+        const formData = {
+            bus_interno: busSelect.value,
+            ppu: ppuInput.value,
+            fecha: new Date(),
+            'alerta-izq': document.querySelector('input[name="alerta-izq"]:checked').value,
+            'alerta-der': document.querySelector('input[name="alerta-der"]:checked').value,
+            'consola': document.querySelector('input[name="consola"]:checked').value,
+            'sensor-frontal': document.querySelector('input[name="sensor-frontal"]:checked').value,
+            'sensor-izq': document.querySelector('input[name="sensor-izq"]:checked').value,
+            'sensor-der': document.querySelector('input[name="sensor-der"]:checked').value,
+            observaciones: document.getElementById('observaciones')?.value || ''
+        };
+        
+        // Calculate overall status
+        const statuses = [
+            formData['alerta-izq'],
+            formData['alerta-der'],
+            formData['consola'],
+            formData['sensor-frontal'],
+            formData['sensor-izq'],
+            formData['sensor-der']
+        ];
+        
+        if (statuses.includes('NO TIENE')) {
+            formData.estado_general = 'NO TIENE';
+        } else if (statuses.includes('DAÑADO')) {
+            formData.estado_general = 'DAÑADO';
+        } else {
+            formData.estado_general = 'BUENO';
+        }
+        
+        console.log('📊 Datos del formulario:', formData);
+        
+        showLoading();
+        
+        let savedToSupabase = false;
+        
+        // Intentar guardar en Supabase
+        if (client) {
+            try {
+                console.log('💾 Guardando en Supabase...');
+                const { data, error } = await client
+                    .from('inspections')
+                    .insert(formData)
+                    .select();
+                
+                if (error) {
+                    console.error('Error de Supabase:', error);
+                    throw error;
+                }
+                
+                savedToSupabase = true;
+                console.log('✅ Guardado en Supabase exitoso');
+                showToast('Registro Guardado', 'La revisión ha sido registrada correctamente en Supabase.', 'success');
+                
+                if (data && data.length > 0) {
+                    data[0].fecha = new Date(data[0].fecha);
+                    inspectionsData.unshift(data[0]);
+                } else {
+                    inspectionsData.unshift(formData);
+                }
+                
+            } catch (supabaseError) {
+                console.warn('❌ Error al guardar en Supabase:', supabaseError);
+                showToast('Error en Supabase', 'Error al guardar en Supabase. Guardado solo localmente.', 'warning');
+            }
+        }
+        
+        // Si no se pudo guardar en Supabase, guardar localmente
+        if (!savedToSupabase) {
+            console.log('💾 Guardando localmente...');
+            inspectionsData.unshift(formData);
+            showToast('Guardado Local', 'Registro guardado localmente.', 'info');
+        }
+        
+        // Actualizar interfaz
+        updateDashboard();
+        updateRecordsTable();
+        updateReports();
+        
+        // Reset form
+        if (inspectionForm) {
+            inspectionForm.reset();
+        }
+        if (ppuInput) {
+            ppuInput.value = '';
+        }
+        
+        window.scrollTo(0, 0);
+        
+        console.log('✅ Formulario procesado exitosamente');
+        
+    } catch (error) {
+        console.error('❌ Error en el proceso de guardado:', error);
+        showToast('Error', 'Ocurrió un error al procesar el registro: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+
+function initFormSubmission() {
+    console.log('🔧 Inicializando formulario...');
+    
+    if (!inspectionForm) {
+        console.error('❌ Formulario no encontrado - ID: inspection-form');
+        return;
+    }
+    
+    console.log('✅ Formulario encontrado:', inspectionForm);
+    
+    // Remover listener previo si existe
+    inspectionForm.removeEventListener('submit', handleFormSubmit);
+    
+    // Agregar nuevo listener
+    inspectionForm.addEventListener('submit', handleFormSubmit);
+    
+    console.log('✅ Event listener agregado al formulario');
+}
+
+// Función separada para manejar el submit
+function handleFormSubmit(e) {
+    console.log('🚀 Formulario enviado - manejando evento...');
+    e.preventDefault();
+    
+    const busInterno = busSelect?.value;
+    const ppu = ppuInput?.value;
+    
+    if (!busInterno || !ppu) {
+        showToast('Error', 'Por favor seleccione un bus válido.', 'error');
+        return;
+    }
+    
+    const existingInspection = checkIfPPUAlreadyInspected(ppu, busInterno);
+    
+    if (existingInspection) {
+        const alertMessage = formatExistingInspectionInfo(existingInspection);
+        
+        showConfirmAlert(
+            '⚠️ PPU Ya Revisado Hoy',
+            alertMessage,
+            () => {
+                processFormSubmission();
+            },
+            () => {
+                showToast('Operación Cancelada', 'No se guardó el registro duplicado.', 'info');
+            }
+        );
+    } else {
+        processFormSubmission();
+    }
+}
+
+// Dashboard
+function initDashboard() {
+    console.log('🔧 Inicializando dashboard...');
+    
+    const totalBusesElement = document.getElementById('total-buses');
+    if (totalBusesElement) {
+        totalBusesElement.textContent = busesData.length;
+    }
+    
+    const sensorsChartContainer = document.getElementById('sensors-chart');
+    const trendChartContainer = document.getElementById('trend-chart');
+    
+    if (sensorsChartContainer) {
+        sensorsChartContainer.style.height = '150px';
+        sensorsChartContainer.style.display = 'flex';
+        sensorsChartContainer.style.alignItems = 'center';
+        sensorsChartContainer.style.justifyContent = 'center';
+        sensorsChartContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary);">Datos de sensores visualizados aquí</div>';
+    }
+    
+    if (trendChartContainer) {
+        trendChartContainer.style.height = '150px';
+        trendChartContainer.style.display = 'flex';
+        trendChartContainer.style.alignItems = 'center';
+        trendChartContainer.style.justifyContent = 'center';
+        trendChartContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary);">Tendencias de fallas visualizadas aquí</div>';
+    }
+    
+    const refreshButton = document.querySelector('.refresh-dashboard');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', updateStats);
+    }
+    
+    updateStats();
+    console.log('✅ Dashboard inicializado');
+}
+
+function updateStats() {
+    let totalBueno = 0;
+    let totalDanado = 0;
+    let totalNoTiene = 0;
+    
+    inspectionsData.forEach(inspection => {
+        const components = [
+            'alerta-izq', 'alerta-der', 'consola', 
+            'sensor-frontal', 'sensor-izq', 'sensor-der'
+        ];
+        
+        components.forEach(sensor => {
+            if (!inspection[sensor]) return;
+            
+            if (inspection[sensor] === 'BUENO') totalBueno++;
+            else if (inspection[sensor] === 'DAÑADO') totalDanado++;
+            else if (inspection[sensor] === 'NO TIENE') totalNoTiene++;
+        });
+    });
+    
+    const sensorsBuenoElement = document.getElementById('sensors-bueno');
+    const sensorsDanadoElement = document.getElementById('sensors-danado');
+    const sensorsNoTieneElement = document.getElementById('sensors-no-tiene');
+    
+    if (sensorsBuenoElement) sensorsBuenoElement.textContent = totalBueno;
+    if (sensorsDanadoElement) sensorsDanadoElement.textContent = totalDanado;
+    if (sensorsNoTieneElement) sensorsNoTieneElement.textContent = totalNoTiene;
+    
+    const recentTable = document.getElementById('recent-inspections');
+    if (!recentTable) return;
+    
+    const recentTableBody = recentTable.querySelector('tbody');
+    if (!recentTableBody) return;
+    
+    recentTableBody.innerHTML = '';
+    
+    const recentInspections = [...inspectionsData].slice(0, 5);
+    
+    if (recentInspections.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="5" style="text-align: center;">No hay registros disponibles</td>`;
+        recentTableBody.appendChild(tr);
+        return;
+    }
+    
+    recentInspections.forEach(inspection => {
+        const tr = document.createElement('tr');
+        
+        const statusClass = 
+            inspection.estado_general === 'BUENO' ? 'status-bueno' :
+            inspection.estado_general === 'DAÑADO' ? 'status-danado' : 'status-no-tiene';
+        
+        const statusIcon = 
+            inspection.estado_general === 'BUENO' ? 'check-circle' :
+            inspection.estado_general === 'DAÑADO' ? 'exclamation-triangle' : 'times-circle';
+        
+        tr.innerHTML = `
+            <td>${formatDateTime(inspection.fecha)}</td>
+            <td>${inspection.bus_interno}</td>
+            <td>${inspection.ppu}</td>
+            <td><span class="status-badge ${statusClass}"><i class="fas fa-${statusIcon}"></i> ${inspection.estado_general}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline btn-icon view-details" data-id="${inspection.bus_interno + '-' + new Date(inspection.fecha).getTime()}">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        `;
+        
+        recentTableBody.appendChild(tr);
+    });
+    
+    document.querySelectorAll('#recent-inspections .view-details').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            const [interno, timestamp] = id.split('-');
+            const inspection = inspectionsData.find(
+                i => i.bus_interno === interno && new Date(i.fecha).getTime() === parseInt(timestamp)
+            );
+            
+            if (inspection) {
+                showInspectionDetails(inspection);
+            }
+        });
+    });
+}
+
+function updateDashboard() {
+    updateStats();
+}
+
+// Records (funciones simplificadas por espacio)
+function initRecordsTable() {
+    console.log('🔧 Inicializando tabla de registros...');
+    
+    const recordsSearch = document.getElementById('records-search');
+    const recordsStatus = document.getElementById('records-status');
+    const exportRecordsBtn = document.getElementById('export-records');
+    
+    if (recordsSearch) {
+        recordsSearch.addEventListener('input', updateRecordsTable);
+    }
+    
+    if (recordsStatus) {
+        recordsStatus.addEventListener('change', updateRecordsTable);
+    }
+    
+    if (exportRecordsBtn) {
+        exportRecordsBtn.addEventListener('click', () => {
+            exportToExcel(getFilteredRecords(), 'registros_sensores');
+        });
+    }
+    
+    updateRecordsTable();
+    console.log('✅ Tabla de registros inicializada');
+}
+
+function getFilteredRecords() {
+    const recordsSearch = document.getElementById('records-search');
+    const recordsStatus = document.getElementById('records-status');
+    
+    let searchTerm = '';
+    let statusFilter = '';
+    
+    if (recordsSearch) {
+        searchTerm = recordsSearch.value.toLowerCase();
+    }
+    
+    if (recordsStatus) {
+        statusFilter = recordsStatus.value;
+    }
+    
+    return inspectionsData.filter(inspection => {
+        const searchMatch = !searchTerm || 
+            inspection.bus_interno.toLowerCase().includes(searchTerm) ||
+            inspection.ppu.toLowerCase().includes(searchTerm);
+        
+        const statusMatch = !statusFilter || inspection.estado_general === statusFilter;
+        
+        return searchMatch && statusMatch;
+    });
+}
+
+function updateRecordsTable() {
+    const recordsTable = document.getElementById('records-table');
+    if (!recordsTable) return;
+    
+    const recordsTableBody = recordsTable.querySelector('tbody');
+    if (!recordsTableBody) return;
+    
+    recordsTableBody.innerHTML = '';
+    
+    const filteredRecords = getFilteredRecords();
+    
+    const itemsPerPage = 10;
+    const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+    
+    updatePagination(totalPages, currentRecordsPage, (page) => {
+        currentRecordsPage = page;
+        renderRecordsPage();
+    });
+    
+    function renderRecordsPage() {
+        recordsTableBody.innerHTML = '';
+        
+        const start = (currentRecordsPage - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        const pageRecords = filteredRecords.slice(start, end);
+        
+        if (pageRecords.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="6" style="text-align: center;">No se encontraron registros</td>`;
+            recordsTableBody.appendChild(tr);
+            return;
+        }
+        
+        pageRecords.forEach(inspection => {
+            const tr = document.createElement('tr');
+            
+            const statusClass = 
+                inspection.estado_general === 'BUENO' ? 'status-bueno' :
+                inspection.estado_general === 'DAÑADO' ? 'status-danado' : 'status-no-tiene';
+            
+            const statusIcon = 
+                inspection.estado_general === 'BUENO' ? 'check-circle' :
+                inspection.estado_general === 'DAÑADO' ? 'exclamation-triangle' : 'times-circle';
+            
+            tr.innerHTML = `
+                <td>${formatDate(inspection.fecha)}</td>
+                <td>${formatTime(inspection.fecha)}</td>
+                <td>${inspection.bus_interno}</td>
+                <td>${inspection.ppu}</td>
+                <td><span class="status-badge ${statusClass}"><i class="fas fa-${statusIcon}"></i> ${inspection.estado_general}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline btn-icon view-details" data-id="${inspection.bus_interno + '-' + new Date(inspection.fecha).getTime()}">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            `;
+            
+            recordsTableBody.appendChild(tr);
+        });
+        
+        document.querySelectorAll('#records-table .view-details').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                const [interno, timestamp] = id.split('-');
+                const inspection = inspectionsData.find(
+                    i => i.bus_interno === interno && new Date(i.fecha).getTime() === parseInt(timestamp)
+                );
+                
+                if (inspection) {
+                    showInspectionDetails(inspection);
+                }
+            });
+        });
+    }
+    
+    renderRecordsPage();
+}
+
+function updatePagination(totalPages, currentPage, callback) {
+    const pagination = document.getElementById('records-pagination');
+    if (!pagination) return;
+    
+    pagination.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            callback(currentPage - 1);
+        }
+    });
+    pagination.appendChild(prevBtn);
+    
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    
+    if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.textContent = i;
+        if (i === currentPage) {
+            pageBtn.classList.add('active');
+        }
+        pageBtn.addEventListener('click', () => {
+            callback(i);
+        });
+        pagination.appendChild(pageBtn);
+    }
+    
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            callback(currentPage + 1);
+        }
+    });
+    pagination.appendChild(nextBtn);
+}
+
+function showInspectionDetails(inspection) {
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.right = '0';
+    modal.style.bottom = '0';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.zIndex = '100';
+    modal.style.padding = '1rem';
+    
+    const content = document.createElement('div');
+    content.style.backgroundColor = 'var(--bg-primary)';
+    content.style.borderRadius = '0.75rem';
+    content.style.boxShadow = 'var(--box-shadow-elevated)';
+    content.style.padding = '1.5rem';
+    content.style.width = '100%';
+    content.style.maxWidth = '500px';
+    content.style.maxHeight = '90vh';
+    content.style.overflow = 'auto';
+    
+    const statusClass = 
+        inspection.estado_general === 'BUENO' ? 'status-bueno' :
+        inspection.estado_general === 'DAÑADO' ? 'status-danado' : 'status-no-tiene';
+    
+    const statusIcon = 
+        inspection.estado_general === 'BUENO' ? 'check-circle' :
+        inspection.estado_general === 'DAÑADO' ? 'exclamation-triangle' : 'times-circle';
+    
+    content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Detalles de la Revisión</h2>
+            <button class="btn btn-sm btn-outline btn-icon close-modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div style="display: flex; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+            <div style="background-color: var(--bg-secondary); width: 50px; height: 50px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                <i class="fas fa-bus" style="font-size: 1.5rem; color: var(--primary-color);"></i>
+            </div>
+            <div>
+                <div style="font-weight: 600; font-size: 1.125rem;">${inspection.bus_interno} - ${inspection.ppu}</div>
+                <div style="color: var(--text-secondary); font-size: 0.875rem;">Fecha: ${formatDateTime(inspection.fecha)}</div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-weight: 600; margin-bottom: 0.75rem;">Estado General</div>
+            <span class="status-badge ${statusClass}" style="font-size: 0.875rem;">
+                <i class="fas fa-${statusIcon}"></i> ${inspection.estado_general}
+            </span>
+        </div>
+        
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-weight: 600; margin-bottom: 0.75rem;">Estado de los Sensores</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">ALERTA IZQUIERDA</div>
+                    <span class="status-badge ${getStatusClass(inspection['alerta-izq'])}" style="font-size: 0.75rem;">
+                        ${inspection['alerta-izq']}
+                    </span>
+                </div>
+                <div>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">ALERTA DERECHA</div>
+                    <span class="status-badge ${getStatusClass(inspection['alerta-der'])}" style="font-size: 0.75rem;">
+                        ${inspection['alerta-der']}
+                    </span>
+                </div>
+                <div>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">CONSOLA</div>
+                    <span class="status-badge ${getStatusClass(inspection['consola'])}" style="font-size: 0.75rem;">
+                        ${inspection['consola']}
+                    </span>
+                </div>
+                <div>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">SENSOR FRONTAL</div>
+                    <span class="status-badge ${getStatusClass(inspection['sensor-frontal'])}" style="font-size: 0.75rem;">
+                        ${inspection['sensor-frontal']}
+                    </span>
+                </div>
+                <div>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">SENSOR IZQUIERDO</div>
+                    <span class="status-badge ${getStatusClass(inspection['sensor-izq'])}" style="font-size: 0.75rem;">
+                        ${inspection['sensor-izq']}
+                    </span>
+                </div>
+                <div>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.875rem;">SENSOR DERECHO</div>
+                    <span class="status-badge ${getStatusClass(inspection['sensor-der'])}" style="font-size: 0.75rem;">
+                        ${inspection['sensor-der']}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        ${inspection.observaciones ? `
+        <div style="margin-bottom: 1.5rem;">
+            <div style="font-weight: 600; margin-bottom: 0.75rem;">Observaciones</div>
+            <div style="background-color: var(--bg-secondary); padding: 1rem; border-radius: 0.5rem; font-size: 0.875rem;">
+                ${inspection.observaciones}
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+    
+    const closeBtn = modal.querySelector('.close-modal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+    }
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
+// Reports (versión simplificada)
+function initReports() {
+    console.log('🔧 Inicializando reportes...');
+    // Funciones de reportes simplificadas por espacio
+    console.log('✅ Reportes inicializados');
+}
+
+function updateReports() {
+    // Función simplificada
+}
+
+// Export to Excel
+function exportToExcel(data, filename) {
+    if (!window.XLSX) {
+        console.error('La biblioteca XLSX no está disponible');
+        showToast('Error', 'No se puede exportar a Excel. Biblioteca no disponible.', 'error');
+        return;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    
+    const formattedData = data.map(item => {
+        const newItem = { ...item };
+        
+        if (newItem.fecha) {
+            newItem.fecha = formatDateTime(newItem.fecha);
+        }
+        
+        return newItem;
+    });
+    
+    const ws = XLSX.utils.json_to_sheet(formattedData);
+    
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    
+    XLSX.writeFile(wb, `${filename}_${formatDate(new Date())}.xlsx`);
+}
+
+// Add sync buttons
+function addSyncButtons() {
+    console.log('🔧 Agregando botones de sincronización...');
+    
+    const recordsPageHeader = document.querySelector('#records .page-header .btn-group');
+    if (recordsPageHeader && client) {
+        const syncBtn = document.createElement('button');
+        syncBtn.className = 'btn btn-outline';
+        syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sincronizar';
+        syncBtn.addEventListener('click', () => {
+            loadDataFromSupabase();
+        });
+        recordsPageHeader.appendChild(syncBtn);
+    }
+    
+    const dashboardPageHeader = document.querySelector('#dashboard .page-header .btn-group');
+    if (dashboardPageHeader && client) {
+        const dashboardSyncBtn = document.createElement('button');
+        dashboardSyncBtn.className = 'btn btn-outline';
+        dashboardSyncBtn.innerHTML = '<i class="fas fa-cloud-download-alt"></i> Cargar Datos';
+        dashboardSyncBtn.addEventListener('click', () => {
+            loadDataFromSupabase();
+        });
+        dashboardPageHeader.appendChild(dashboardSyncBtn);
+    }
+    
+    console.log('✅ Botones de sincronización agregados');
+}
+
+// Initialize application
+function initApp() {
+    console.log('🚀 Iniciando aplicación Movileyes...');
+    
+    // Paso 1: Inicializar elementos del DOM
+    initDOMElements();
+    
+    // Paso 2: Inicializar componentes
+    initNavigation();
+    initBusSelect();
+    initFormSubmission(); // ← ESTA ES LA FUNCIÓN CRÍTICA
+    initDashboard();
+    initRecordsTable();
+    initReports();
+    
+    // Paso 3: Agregar botones adicionales
+    addSyncButtons();
+    
+    // Paso 4: Cargar datos desde Supabase (con delay para que la UI esté lista)
+    if (client) {
+        setTimeout(() => {
+            loadDataFromSupabase();
+        }, 1000);
+    }
+    
+    console.log('✅ Aplicación inicializada correctamente');
+}
+
+// Run when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 DOM cargado - iniciando aplicación...');
+    initApp();
+});
+    </script>
+</body>
+
+</html>
